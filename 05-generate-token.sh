@@ -14,6 +14,8 @@ echo "========================================="
 
 # Generate worker token
 echo "Generating worker join token..."
+# Use tee to properly save output to file (sudo doesn't affect redirects)
+# Suppress stdout here as token is displayed later via cat for better formatting
 sudo k0s token create --role=worker | tee "$TOKEN_FILE" > /dev/null
 
 if [ ! -s "$TOKEN_FILE" ]; then
