@@ -59,8 +59,27 @@ sudo systemctl enable k0sworker
 
 # Wait for worker to be ready
 echo ""
-echo "Waiting for worker to initialize (30 seconds)..."
-sleep 30
+echo "Waiting for worker to initialize..."
+WAIT_TIME=2
+MAX_WAIT=60
+TOTAL_WAITED=0
+while [ $TOTAL_WAITED -lt $MAX_WAIT ]; do
+    if sudo systemctl is-active --quiet k0sworker; then
+        echo "✓ Worker service is active!"
+        break
+    fi
+    echo -n "."
+    sleep $WAIT_TIME
+    TOTAL_WAITED=$((TOTAL_WAITED + WAIT_TIME))
+    # Exponential backoff: double wait time up to 8 seconds
+    if [ $WAIT_TIME -lt 8 ]; then
+        WAIT_TIME=$((WAIT_TIME * 2))
+    fi
+done
+echo ""
+if [ $TOTAL_WAITED -ge $MAX_WAIT ]; then
+    echo "⚠ Warning: Worker service may not be ready yet. Check logs if issues occur."
+fi
 
 echo ""
 echo "========================================="

@@ -43,13 +43,14 @@ if lsmod | grep -q overlay && lsmod | grep -q br_netfilter; then
     PREP_DONE=true
 fi
 
-# Check if firewall rules are in place
+# Check if firewall rules are in place (cache firewall-cmd output)
+FIREWALL_PORTS=$(sudo firewall-cmd --list-ports 2>/dev/null || echo "")
 if [ "$NODE_TYPE" == "CONTROL" ]; then
-    if sudo firewall-cmd --list-ports 2>/dev/null | grep -q "6443"; then
+    if echo "$FIREWALL_PORTS" | grep -q "6443"; then
         FIREWALL_DONE=true
     fi
 elif [ "$NODE_TYPE" == "WORKER" ]; then
-    if sudo firewall-cmd --list-ports 2>/dev/null | grep -q "30000-32767"; then
+    if echo "$FIREWALL_PORTS" | grep -q "30000-32767"; then
         FIREWALL_DONE=true
     fi
 fi

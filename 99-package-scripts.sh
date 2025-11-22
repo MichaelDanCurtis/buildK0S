@@ -7,6 +7,10 @@ PACKAGE_NAME="k0s-rhel9-scripts"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 OUTPUT_FILE="${PACKAGE_NAME}_${TIMESTAMP}.tar.gz"
 
+# Constants for file size calculation
+readonly MB_SIZE=1048576
+readonly KB_SIZE=1024
+
 echo "========================================="
 echo "k0s Scripts Packager"
 echo "========================================="
@@ -43,10 +47,19 @@ echo ""
 
 # Create the tarball
 echo "Creating tarball: $OUTPUT_FILE"
-tar -czf "$OUTPUT_FILE" "${FILES[@]}" 2>/dev/null
-
-if [ $? -eq 0 ]; then
-    SIZE=$(ls -lh "$OUTPUT_FILE" | awk '{print $5}')
+if tar -czf "$OUTPUT_FILE" "${FILES[@]}" 2>/dev/null; then
+    # Get human-readable file size
+    if command -v du &> /dev/null; then
+        SIZE=$(du -h "$OUTPUT_FILE" | cut -f1)
+    else
+        # Fallback to stat with better formatting
+        SIZE_BYTES=$(stat -c %s "$OUTPUT_FILE")
+        if [ "$SIZE_BYTES" -gt "$MB_SIZE" ]; then
+            SIZE=$(awk "BEGIN {printf \"%.1fM\", $SIZE_BYTES/$MB_SIZE}")
+        else
+            SIZE=$(awk "BEGIN {printf \"%.1fK\", $SIZE_BYTES/$KB_SIZE}")
+        fi
+    fi
     echo "✓ Package created successfully!"
     echo ""
     echo "========================================="
