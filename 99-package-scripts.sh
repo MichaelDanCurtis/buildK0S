@@ -44,7 +44,18 @@ echo ""
 # Create the tarball
 echo "Creating tarball: $OUTPUT_FILE"
 if tar -czf "$OUTPUT_FILE" "${FILES[@]}" 2>/dev/null; then
-    SIZE=$(stat -c %s "$OUTPUT_FILE" | awk '{printf "%.1fK", $1/1024}')
+    # Get human-readable file size
+    if command -v du &> /dev/null; then
+        SIZE=$(du -h "$OUTPUT_FILE" | cut -f1)
+    else
+        # Fallback to stat with better formatting
+        SIZE_BYTES=$(stat -c %s "$OUTPUT_FILE")
+        if [ "$SIZE_BYTES" -gt 1048576 ]; then
+            SIZE=$(awk "BEGIN {printf \"%.1fM\", $SIZE_BYTES/1048576}")
+        else
+            SIZE=$(awk "BEGIN {printf \"%.1fK\", $SIZE_BYTES/1024}")
+        fi
+    fi
     echo "✓ Package created successfully!"
     echo ""
     echo "========================================="
