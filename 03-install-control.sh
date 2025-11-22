@@ -77,8 +77,8 @@ if ! command -v kubectl &> /dev/null; then
     done
     
     if [ -z "$KUBECTL_VERSION" ]; then
-        # Try to get version from the running k0s cluster as fallback
-        KUBECTL_VERSION=$(sudo k0s kubectl version --client --short 2>/dev/null | grep -oP 'v[0-9]+\.[0-9]+\.[0-9]+' || echo "")
+        # Try to get version from the running k0s cluster as fallback (portable approach)
+        KUBECTL_VERSION=$(sudo k0s kubectl version --client --short 2>/dev/null | grep -o 'v[0-9]*\.[0-9]*\.[0-9]*' | head -n1 || echo "")
         if [ -z "$KUBECTL_VERSION" ]; then
             echo "⚠ Warning: Could not determine kubectl version, using latest stable fallback"
             KUBECTL_VERSION="v1.31.0"
