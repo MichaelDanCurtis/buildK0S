@@ -34,33 +34,69 @@ sudo systemctl enable k0scontroller
 
 # Wait for k0s to be ready
 echo "[6/7] Waiting for k0s to be ready (this may take 1-2 minutes)..."
-sleep 10
-for i in {1..30}; do
+WAIT_TIME=2
+MAX_WAIT=120
+TOTAL_WAITED=0
+while [ $TOTAL_WAITED -lt $MAX_WAIT ]; do
     if sudo k0s status 2>/dev/null | grep -q "Version:"; then
         echo "✓ k0s is ready!"
         break
     fi
     echo -n "."
-    sleep 5
+    sleep $WAIT_TIME
+    TOTAL_WAITED=$((TOTAL_WAITED + WAIT_TIME))
+    # Exponential backoff: double wait time up to 10 seconds
+    if [ $WAIT_TIME -lt 10 ]; then
+        WAIT_TIME=$((WAIT_TIME * 2))
+    fi
 done
 echo ""
+if [ $TOTAL_WAITED -ge $MAX_WAIT ]; then
+    echo "⚠ Warning: Timeout waiting for k0s to be ready. Continuing anyway..."
+fi
 
 # Create kubeconfig
 echo "[7/7] Creating kubeconfig..."
 mkdir -p "$KUBE_DIR"
 sudo k0s kubeconfig admin | tee "$KUBE_DIR/config" > /dev/null
-sudo chown $(id -u):$(id -g) "$KUBE_DIR/config"
+sudo chown "$(id -u):$(id -g)" "$KUBE_DIR/config"
 chmod 600 "$KUBE_DIR/config"
 
 # Install kubectl if not already installed
 if ! command -v kubectl &> /dev/null; then
     echo ""
     echo "Installing kubectl..."
-    KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
-    curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
-    sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-    rm kubectl
-    echo "✓ kubectl installed"
+    # Get kubectl version with retry
+    for attempt in 1 2 3; do
+        KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt 2>/dev/null)
+        if [ -n "$KUBECTL_VERSION" ]; then
+            break
+        fi
+        echo "Retry $attempt/3: Failed to get kubectl version, retrying..."
+        sleep 2
+    done
+    
+    if [ -z "$KUBECTL_VERSION" ]; then
+        echo "⚠ Warning: Could not determine latest kubectl version, using fallback"
+        KUBECTL_VERSION="v1.28.0"
+    fi
+    
+    # Download kubectl with retry
+    for attempt in 1 2 3; do
+        if curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" 2>/dev/null; then
+            break
+        fi
+        echo "Retry $attempt/3: Failed to download kubectl, retrying..."
+        sleep 2
+    done
+    
+    if [ -f kubectl ]; then
+        sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+        rm kubectl
+        echo "✓ kubectl installed"
+    else
+        echo "⚠ Warning: Failed to install kubectl. You can install it manually later."
+    fi
 fi
 
 echo ""

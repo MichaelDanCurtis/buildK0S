@@ -26,7 +26,7 @@ echo ""
 echo "This will completely remove k0s and all data!"
 echo "This action CANNOT be undone!"
 echo ""
-read -p "Are you sure you want to continue? (yes/no): " CONFIRM
+read -r -p "Are you sure you want to continue? (yes/no): " CONFIRM
 
 if [ "$CONFIRM" != "yes" ]; then
     echo "Uninstall cancelled."
@@ -76,7 +76,7 @@ sudo rm -rf /run/k0s
 sudo rm -rf ~/.kube/config 2>/dev/null || true
 
 # Remove kernel module config (optional)
-read -p "Remove kernel module configuration? (yes/no): " REMOVE_MODULES
+read -r -p "Remove kernel module configuration? (yes/no): " REMOVE_MODULES
 if [ "$REMOVE_MODULES" == "yes" ]; then
     sudo rm -f /etc/modules-load.d/k0s.conf
     sudo rm -f /etc/sysctl.d/k0s.conf
@@ -118,7 +118,7 @@ echo ""
 
 # Suggest reboot
 echo "A system reboot is recommended to ensure all k0s components are removed."
-read -p "Reboot now? (yes/no): " REBOOT
+read -r -p "Reboot now? (yes/no): " REBOOT
 if [ "$REBOOT" == "yes" ]; then
     echo "Rebooting in 5 seconds..."
     sleep 5

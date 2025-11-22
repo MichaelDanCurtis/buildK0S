@@ -54,24 +54,27 @@ echo ""
 # Check for any issues
 echo "8. Checking for Issues:"
 echo "----------------------------------------"
-NOT_READY=$(kubectl get nodes | grep -c "NotReady" || true)
+# Cache kubectl get nodes output to avoid multiple calls
+NODES_OUTPUT=$(kubectl get nodes --no-headers 2>/dev/null || echo "")
+NOT_READY=$(echo "$NODES_OUTPUT" | grep -c "NotReady" || true)
 if [ "$NOT_READY" -gt 0 ]; then
     echo "⚠ WARNING: $NOT_READY node(s) not ready!"
     echo ""
     echo "Not ready nodes:"
-    kubectl get nodes | grep "NotReady"
+    echo "$NODES_OUTPUT" | grep "NotReady"
 else
     echo "✓ All nodes are ready!"
 fi
 echo ""
 
-# Check for pending pods
-PENDING_PODS=$(kubectl get pods -A | grep -c "Pending" || true)
+# Cache kubectl get pods output to avoid multiple calls
+PODS_OUTPUT=$(kubectl get pods -A --no-headers 2>/dev/null || echo "")
+PENDING_PODS=$(echo "$PODS_OUTPUT" | grep -c "Pending" || true)
 if [ "$PENDING_PODS" -gt 0 ]; then
     echo "⚠ WARNING: $PENDING_PODS pod(s) in pending state!"
     echo ""
     echo "Pending pods:"
-    kubectl get pods -A | grep "Pending"
+    echo "$PODS_OUTPUT" | grep "Pending"
 else
     echo "✓ No pending pods"
 fi
@@ -79,7 +82,7 @@ echo ""
 
 # Expected nodes count
 EXPECTED_NODES=3
-ACTUAL_NODES=$(kubectl get nodes --no-headers | wc -l)
+ACTUAL_NODES=$(echo "$NODES_OUTPUT" | wc -l)
 if [ "$ACTUAL_NODES" -eq "$EXPECTED_NODES" ]; then
     echo "✓ All $EXPECTED_NODES nodes are present in the cluster"
 else

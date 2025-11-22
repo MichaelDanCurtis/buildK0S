@@ -14,7 +14,7 @@ echo "========================================="
 
 # Generate worker token
 echo "Generating worker join token..."
-sudo k0s token create --role=worker > "$TOKEN_FILE"
+sudo k0s token create --role=worker | tee "$TOKEN_FILE" > /dev/null
 
 if [ ! -s "$TOKEN_FILE" ]; then
     echo "ERROR: Failed to generate token"

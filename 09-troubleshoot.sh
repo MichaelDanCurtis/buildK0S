@@ -6,10 +6,13 @@
 # Can be run on either CONTROL or WORKER nodes
 #
 
+# Cache systemctl list-units output to avoid multiple calls
+SYSTEMCTL_UNITS=$(systemctl list-units --no-pager 2>/dev/null)
+
 NODE_TYPE=""
-if systemctl list-units | grep -q k0scontroller; then
+if echo "$SYSTEMCTL_UNITS" | grep -q k0scontroller; then
     NODE_TYPE="CONTROL"
-elif systemctl list-units | grep -q k0sworker; then
+elif echo "$SYSTEMCTL_UNITS" | grep -q k0sworker; then
     NODE_TYPE="WORKER"
 else
     NODE_TYPE="UNKNOWN"
@@ -26,7 +29,7 @@ echo "1. System Information:"
 echo "----------------------------------------"
 echo "Hostname: $(hostname)"
 echo "IP Address: $(hostname -I | awk '{print $1}')"
-echo "OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d'"' -f2)"
+echo "OS: $(grep PRETTY_NAME /etc/os-release | cut -d'"' -f2)"
 echo "Kernel: $(uname -r)"
 echo ""
 

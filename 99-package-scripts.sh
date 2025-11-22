@@ -43,10 +43,8 @@ echo ""
 
 # Create the tarball
 echo "Creating tarball: $OUTPUT_FILE"
-tar -czf "$OUTPUT_FILE" "${FILES[@]}" 2>/dev/null
-
-if [ $? -eq 0 ]; then
-    SIZE=$(ls -lh "$OUTPUT_FILE" | awk '{print $5}')
+if tar -czf "$OUTPUT_FILE" "${FILES[@]}" 2>/dev/null; then
+    SIZE=$(stat -c %s "$OUTPUT_FILE" | awk '{printf "%.1fK", $1/1024}')
     echo "✓ Package created successfully!"
     echo ""
     echo "========================================="
